@@ -25,45 +25,52 @@
     <script src="js/vendor/modernizr-2.8.3.min.js"></script>
     <script>
         async function callCHATGPT() {
-            let responseText1 = document.getElementById("chatgpt-response");
-            responseText1.innerHTML = ""
+            const responseGPT = document.getElementById("chatgpt-response");
+            responseGPT.innerHTML = '';
 
-            function printMessage(message) {
-                let responseText = document.getElementById("chatgpt-response");
-                let index = 0;
+            const printMessage = (message) => {
+                return new Promise(resolve => {
+                    let responseText = document.getElementById("chatgpt-response");
+                    let index = 0;
 
-                // 创建一个定时器，每隔一段时间打印一个字符
-                let interval = setInterval(function () {
-                        responseText.innerHTML += message[index];
-                        index++;
+                    // 创建一个定时器，每隔一段时间打印一个字符
+                    let interval = setInterval(function () {
+                            responseText.innerHTML += message[index];
+                            index++;
+                            // 当打印完成时，清除定时器
+                            if (index >= message.length) {
+                                clearInterval(interval);
+                                resolve(true);
+                            }
+                        },
+                        50); // 每隔$毫秒打印一个字符
+                })
+            }
 
-                        // 当打印完成时，清除定时器
-                        if (index >= message.length) {
-                            clearInterval(interval);
-                        }
-                    },
-                    100); // 每隔$毫秒打印一个字符
+            // 打印错误信息
+            const clearAndError = () => {
+                const responseText = document.getElementById("chatgpt-response");
+                responseText.innerHTML = '与远程服务器通信超时:)';
             }
 
             let xhr = new XMLHttpRequest();
-            xhr.timeout = 5000;
-            let url = "http://1/base/quest";
+            xhr.timeout = 10000;
+            let url = "/base/quest";
             xhr.open("POST", url, true);
             xhr.setRequestHeader("Content-Type", "application/json");
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4 && xhr.status === 200) {
-                    let json = JSON.parse(xhr.responseText);
-                    let response = json.data.answ;
+                    const json = JSON.parse(xhr.responseText);
+                    const response = json.data.answ;
 
                     // 将CHATGPT的返回值输出到文本框
-                    let responseText = document.getElementById("chatgpt-response");
+                    const responseText = document.getElementById("chatgpt-response");
                     let index = 0;
 
                     // 创建一个定时器，每隔一段时间打印一个字符
                     let interval = setInterval(function () {
                             responseText.innerHTML += response[index];
                             index++;
-
                             // 当打印完成时，清除定时器
                             if (index >= response.length) {
                                 clearInterval(interval);
@@ -73,12 +80,35 @@
                 }
             };
 
-            let data = JSON.stringify({
-                "prompt": document.getElementById("chat-gpt-input").value,
+            const input = document.getElementById("chat-gpt-input").value;
+            if (input === '') {
+                alert('输入为空!!!');
+                return;
+            }
+            const data = JSON.stringify({
+                "prompt": input,
             });
-            //console.log(data);
+
+            // promise for timeout/error
+            const xhrErr = () => {
+                return new Promise((resolve, reject) => {
+                    xhr.onerror = (e) => {
+                        console.log('通信错误:', e);
+                        resolve(false);
+                    };
+                    xhr.ontimeout = (e) => {
+                        console.log('通信超时:', e);
+                        resolve(false);
+                    };
+                });
+            }
+
             await printMessage('无敌爷爷正在努力尝试与CHATGPT通信...');
             await xhr.send(data);
+            const xhrResult = await xhrErr();
+            if (!xhrResult) {
+                clearAndError();
+            }
         }
     </script>
 </head>
@@ -103,25 +133,23 @@
 </header>
 <div class="basic-portfolio-area ptb-10">
     <div class="filter-menu text-center mb-40">
-        <h4>与OpenGPT对话，请描述您的需求-支持中文、英语、日本语等</h4>
-        <h3>By <a href="https://me.renj.io">renj.io</a></h3>
+        <h4>By <a href="https://me.renj.io">renj.io</a></h4>
+        <h2>Powered by <a style="color: #31b0d5;font-weight: bold" href="https://github.com/jjapplication">JJApplication</a></h2>
     </div>
     <div class="call-to-action-area gray-bg ptb-60">
         <div class="container">
             <div class="row">
-                <div class="col-md-24 col-sm-24 col-xs-24">
-                    <div class="form-group">
-                        <label></label>
+                <div class="col-md-12 col-sm-12 col-xs-12">
+                    <div class="form-group col-md-10 col-sm-10 col-xs-8">
                         <textarea
                             class="form-control"
                             id="chat-gpt-input"
                             placeholder="输入你的问题..."
-                            rows="3"
+                            rows="2"
                             resize="none"
-                            style="width: calc(100% - 1rem); margin: 0 auto; padding: 0.5rem;
-                        background-color: #f4f4f4; color: #333; border: 1px solid #ccc; border-radius: 12px;"></textarea>
+                            style="background-color: #f4f4f4; color: #333; border: 1px solid #D5D5D5; border-radius: 1rem;padding: 1rem;"></textarea>
                     </div>
-                    <div class="col-md-2 col-sm-3 col-xs-12">
+                    <div class="col-md-2 col-sm-2 col-xs-4">
                         <div class="call-to-action">
                             <button onclick="callCHATGPT()" autocomplete="off" class="btn btn-large" href="#"
                                     style="background-color: #333; color: #f4f4f4; border-radius: 10px">
@@ -131,7 +159,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-10 col-sm-9 col-xs-12">
+                    <div class="col-md-12 col-sm-12 col-xs-12">
                         <div class="form-group">
                             <label></label>
                             <textarea
@@ -139,7 +167,7 @@
                                 id="chatgpt-response"
                                 placeholder="JJChat准备好了..."
                                 rows="26" resize="none"
-                                style="width: 100%;height: auto; margin: 0 auto; background-color: #f4f4f4; color: #333; border: 1px solid #ccc; border-radius: 10px; overflow: auto;"
+                                style="width: 100%; height: auto; margin: 0 auto; background-color: #f4f4f4; color: #333; border: 1px solid #D5D5D5; border-radius: 1rem; padding: 1rem; overflow: auto;"
                                 readonly="true"></textarea>
                         </div>
                     </div>
